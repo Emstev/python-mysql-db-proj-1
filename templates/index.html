@@ -1,56 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask REST API UI</title>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Cloudboosta Flask REST API UI</title>
 </head>
 <body>
 <h1>CLOUDBOOSTA 2025 COHORT 1 DEVOPS ENGINEERS</h1>
 
-<h2>Insert Record</h2>
-<form id="insertForm">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required>
-    <button type="button" onclick="insertRecord()">Insert Record</button>
+<h2 id="formTitle">Insert Record</h2>
+<form id="recordForm">
+ <input type="hidden" id="recordId"> <!-- For updates -->
+ 
+ <label for="name">Name:</label>
+ <input type="text" id="name" required>
+
+ <label for="email">Email:</label>
+ <input type="email" id="email">
+
+ <label for="status">Status:</label>
+ <input type="text" id="status">
+
+ <button type="button" onclick="submitForm()">Submit</button>
+ <button type="button" onclick="resetForm()" style="display:none;" id="cancelUpdate">Cancel</button>
 </form>
 
-<h2>View Data</h2>
+<h2>All Records</h2>
 <ul id="dataList"></ul>
 
 <script>
-    function insertRecord() {
-        const name = document.getElementById('name').value;
-        fetch('/insert_record', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 'name': name }),
-        })
-        .then(response => response.text())
-        .then(data => {
-            alert(data);
-            loadData();
-        });
-    }
+ function submitForm() {
+ const id = document.getElementById('recordId').value;
+ const name = document.getElementById('name').value;
+ const email = document.getElementById('email').value;
+ const status = document.getElementById('status').value;
 
-    function loadData() {
-        fetch('/data')
-        .then(response => response.json())
-        .then(data => {
-            const dataList = document.getElementById('dataList');
-            dataList.innerHTML = '';
-            data.forEach(record => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `ID: ${record.id}, Name: ${record.name}`;
-                dataList.appendChild(listItem);
-            });
-        });
-    }
+ if (!name.trim()) {
+ alert('Name is required.');
+ return;
+ }
 
-    // Load initial data when the page is loaded
-    loadData();
+ const payload = JSON.stringify({ name, email, status });
+
+ if (id) {
+ // Update existing record
+ fetch(`/update_record/${id}`, {
+ method: 'PUT',
+ headers: { 'Content-Type': 'application/json' },
+ body: payload
+ })
+ .then(res => res.json())
+ .then(data => {
+ alert(data.message || data.error);
+ resetForm();
+ loadData();
+ });
+ } else {
+ // Insert new record
+ fetch('/insert_record', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: payload
+ })
+ .then(res => res.json())
+ .then(data => {
+ alert(data.message || data.error);
+ resetForm();
+ loadData();
+ });
+ }
+ }
+
+ function loadData() {
+ fetch('/data')
+ .then(res => res.json())
+ .then(data => {
+ const dataList = document.getElementById('dataList');
+ dataList.innerHTML = '';
+
+ data.forEach(record => {
+ const li = document.createElement('li');
+ li.innerHTML = `
+ <strong>ID:</strong> ${record.id},
+ <strong>Name:</strong> ${record.name},
+ <strong>Email:</strong> ${record.email || 'N/A'},
+ <strong>Status:</strong> ${record.status || 'N/A'}
+ <button onclick="editRecord(${record.id}, '${record.name}', '${record.email || ''}', '${record.status || ''}')">Edit</button>
+ <button onclick="deleteRecord(${record.id})">Delete</button>
+ `;
+ dataList.appendChild(li);
+ });
+ });
+ }
+
+ function editRecord(id, name, email, status) {
+ document.getElementById('recordId').value = id;
+ document.getElementById('name').value = name;
+ document.getElementById('email').value = email;
+ document.getElementById('status').value = status;
+ document.getElementById('formTitle').innerText = 'Update Record';
+ document.getElementById('cancelUpdate').style.display = 'inline';
+ }
+
+ function deleteRecord(id) {
+ if (!confirm(`Are you sure you want to delete record ID ${id}?`)) return;
+
+ fetch(`/delete_record/${id}`, {
+ method: 'DELETE'
+ })
+ .then(res => res.json())
+ .then(data => {
+ alert(data.message || data.error);
+ loadData();
+ });
+ }
+
+ function resetForm() {
+ document.getElementById('recordId').value = '';
+ document.getElementById('name').value = '';
+ document.getElementById('email').value = '';
+ document.getElementById('status').value = '';
+ document.getElementById('formTitle').innerText = 'Insert Record';
+ document.getElementById('cancelUpdate').style.display = 'none';
+ }
+
+ window.onload = loadData;
 </script>
 </body>
 </html>
