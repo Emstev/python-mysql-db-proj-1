@@ -7,36 +7,37 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #eef2f3, #8e9eab);
+      background: linear-gradient(to right, #fceabb, #f8b500);
       color: #333;
       padding: 20px;
       max-width: 800px;
       margin: auto;
     }
 
-    h1 {
+    h1, h2 {
       text-align: center;
       color: #2c3e50;
     }
 
     form {
-      background-color: #ffffff;
+      background-color: #fffbe6;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       margin-bottom: 30px;
     }
 
     label {
       display: block;
-      margin: 10px 0 5px;
-      font-weight: 600;
+      margin-top: 10px;
+      font-weight: bold;
     }
 
     input[type="text"],
     input[type="email"] {
       width: 100%;
       padding: 10px;
+      margin-top: 5px;
       margin-bottom: 15px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -44,20 +45,22 @@
 
     button {
       padding: 10px 20px;
+      margin-top: 10px;
       margin-right: 10px;
       border: none;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
 
     button[type="button"] {
-      background-color: #2ecc71;
+      background-color: #27ae60;
       color: white;
     }
 
     #cancelUpdate {
-      background-color: #e74c3c;
+      background-color: #c0392b;
       color: white;
     }
 
@@ -68,7 +71,7 @@
 
     ul#dataList li {
       background-color: #ffffff;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       padding: 15px;
       border-radius: 8px;
       box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
@@ -77,39 +80,38 @@
     ul#dataList li button {
       margin-top: 10px;
       margin-right: 5px;
+      padding: 5px 12px;
+      font-size: 0.9rem;
     }
 
-    ul#dataList li button:nth-child(1) {
+    ul#dataList li .edit-btn {
       background-color: #3498db;
       color: white;
     }
 
-    ul#dataList li button:nth-child(2) {
+    ul#dataList li .delete-btn {
       background-color: #e74c3c;
       color: white;
-    }
-
-    @media (max-width: 600px) {
-      form, ul#dataList li {
-        font-size: 14px;
-      }
     }
   </style>
 </head>
 <body>
-  <h1>CLOUDBOOSTA 2025 C0HORT 1 STUDENTS</h1>
+  <h1>Cloudboosta Flask REST API UI</h1>
   <h2 id="formTitle">Insert Record</h2>
 
   <form id="recordForm">
     <input type="hidden" id="recordId" />
     <label for="name">Name:</label>
     <input type="text" id="name" required />
+
     <label for="email">Email:</label>
     <input type="email" id="email" />
+
     <label for="status">Status:</label>
     <input type="text" id="status" />
+
     <button type="button" onclick="submitForm()">Submit</button>
-    <button type="button" onclick="resetForm()" id="cancelUpdate" style="display:none;">Cancel</button>
+    <button type="button" id="cancelUpdate" onclick="resetForm()" style="display:none;">Cancel</button>
   </form>
 
   <h2>All Records</h2>
@@ -118,39 +120,31 @@
   <script>
     function submitForm() {
       const id = document.getElementById('recordId').value;
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const status = document.getElementById('status').value;
-      if (!name.trim()) {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const status = document.getElementById('status').value.trim();
+
+      if (!name) {
         alert('Name is required.');
         return;
       }
+
       const payload = JSON.stringify({ name, email, status });
-      if (id) {
-        fetch(`/update_record/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        })
-          .then(res => res.json())
-          .then(data => {
-            alert(data.message || data.error);
-            resetForm();
-            loadData();
-          });
-      } else {
-        fetch('/insert_record', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        })
-          .then(res => res.json())
-          .then(data => {
-            alert(data.message || data.error);
-            resetForm();
-            loadData();
-          });
-      }
+
+      const url = id ? `/update_record/${id}` : '/insert_record';
+      const method = id ? 'PUT' : 'POST';
+
+      fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || data.error);
+        resetForm();
+        loadData();
+      });
     }
 
     function loadData() {
@@ -162,12 +156,12 @@
           data.forEach(record => {
             const li = document.createElement('li');
             li.innerHTML = `
-              <strong>ID:</strong> ${record.id}, 
-              <strong>Name:</strong> ${record.name}, 
-              <strong>Email:</strong> ${record.email || 'N/A'}, 
-              <strong>Status:</strong> ${record.status || 'N/A'}<br/>
-              <button onclick="editRecord(${record.id}, '${record.name}', '${record.email || ''}', '${record.status || ''}')">Edit</button>
-              <button onclick="deleteRecord(${record.id})">Delete</button>
+              <strong>ID:</strong> ${record.id}<br>
+              <strong>Name:</strong> ${record.name}<br>
+              <strong>Email:</strong> ${record.email || 'N/A'}<br>
+              <strong>Status:</strong> ${record.status || 'N/A'}<br>
+              <button class="edit-btn" onclick="editRecord(${record.id}, '${record.name}', '${record.email || ''}', '${record.status || ''}')">Edit</button>
+              <button class="delete-btn" onclick="deleteRecord(${record.id})">Delete</button>
             `;
             dataList.appendChild(li);
           });
@@ -185,14 +179,15 @@
 
     function deleteRecord(id) {
       if (!confirm(`Are you sure you want to delete record ID ${id}?`)) return;
+
       fetch(`/delete_record/${id}`, {
         method: 'DELETE'
       })
-        .then(res => res.json())
-        .then(data => {
-          alert(data.message || data.error);
-          loadData();
-        });
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || data.error);
+        loadData();
+      });
     }
 
     function resetForm() {
