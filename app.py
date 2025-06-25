@@ -120,7 +120,7 @@
   </style>
 </head>
 <body>
-  <h1>Cloudboosta Flask REST API UI</h1>
+  <h1>CLOUDBOOSTA 2025 COHORT1 DEVOPS STUDENTS</h1>
   <h2 id="formTitle">Insert Record</h2>
 
   <div id="alertBox"></div>
