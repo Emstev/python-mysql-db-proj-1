@@ -19,6 +19,24 @@
       color: #2c3e50;
     }
 
+    #alertBox {
+      display: none;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+      transition: opacity 0.5s ease;
+    }
+
+    #loadingSpinner {
+      display: none;
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      margin-top: 10px;
+    }
+
     form {
       background-color: #fffbe6;
       padding: 20px;
@@ -51,7 +69,12 @@
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
     }
 
     button[type="button"] {
@@ -80,8 +103,9 @@
     ul#dataList li button {
       margin-top: 10px;
       margin-right: 5px;
-      padding: 5px 12px;
+      padding: 6px 12px;
       font-size: 0.9rem;
+      border-radius: 5px;
     }
 
     ul#dataList li .edit-btn {
@@ -96,8 +120,11 @@
   </style>
 </head>
 <body>
-  <h1>Cloudboosta Flask REST API UI</h1>
+  <h1>CLOUDBOOSTA 2025 COHORT1 DEVOPS STUDENTS</h1>
   <h2 id="formTitle">Insert Record</h2>
+
+  <div id="alertBox"></div>
+  <div id="loadingSpinner">⏳ Please wait...</div>
 
   <form id="recordForm">
     <input type="hidden" id="recordId" />
@@ -118,6 +145,24 @@
   <ul id="dataList"></ul>
 
   <script>
+    function showAlert(message, type = "success") {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.style.display = 'block';
+      alertBox.style.backgroundColor = type === "success" ? "#2ecc71" : "#e74c3c";
+      alertBox.style.color = "white";
+      alertBox.innerText = message;
+      alertBox.style.opacity = 1;
+      setTimeout(() => {
+        alertBox.style.opacity = 0;
+        setTimeout(() => alertBox.style.display = 'none', 300);
+      }, 3000);
+    }
+
+    function showLoading(show) {
+      const spinner = document.getElementById('loadingSpinner');
+      spinner.style.display = show ? 'block' : 'none';
+    }
+
     function submitForm() {
       const id = document.getElementById('recordId').value;
       const name = document.getElementById('name').value.trim();
@@ -125,26 +170,30 @@
       const status = document.getElementById('status').value.trim();
 
       if (!name) {
-        alert('Name is required.');
+        showAlert('Name is required.', 'error');
         return;
       }
 
       const payload = JSON.stringify({ name, email, status });
-
       const url = id ? `/update_record/${id}` : '/insert_record';
       const method = id ? 'PUT' : 'POST';
 
+      showLoading(true);
       fetch(url, {
-        method: method,
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: payload
       })
       .then(res => res.json())
       .then(data => {
-        alert(data.message || data.error);
+        showAlert(data.message || data.error, data.error ? 'error' : 'success');
         resetForm();
         loadData();
-      });
+      })
+      .catch(() => {
+        showAlert('Network error. Please try again.', 'error');
+      })
+      .finally(() => showLoading(false));
     }
 
     function loadData() {
@@ -175,19 +224,25 @@
       document.getElementById('status').value = status;
       document.getElementById('formTitle').innerText = 'Update Record';
       document.getElementById('cancelUpdate').style.display = 'inline';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function deleteRecord(id) {
       if (!confirm(`Are you sure you want to delete record ID ${id}?`)) return;
 
+      showLoading(true);
       fetch(`/delete_record/${id}`, {
         method: 'DELETE'
       })
       .then(res => res.json())
       .then(data => {
-        alert(data.message || data.error);
+        showAlert(data.message || data.error, data.error ? 'error' : 'success');
         loadData();
-      });
+      })
+      .catch(() => {
+        showAlert('Failed to delete. Try again.', 'error');
+      })
+      .finally(() => showLoading(false));
     }
 
     function resetForm() {
