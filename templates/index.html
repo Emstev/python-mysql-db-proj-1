@@ -5,18 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cloudboosta Flask REST API UI</title>
   <style>
+    :root {
+      --primary-bg: linear-gradient(to right, #1e3c72, #2a5298);
+      --form-bg: #f0f9ff;
+      --text-color: #fff;
+      --card-bg: #ffffff;
+      --form-text: #333;
+    }
+
+    [data-theme="dark"] {
+      --primary-bg: #1c1c1c;
+      --form-bg: #2c2c2c;
+      --text-color: #f2f2f2;
+      --card-bg: #333;
+      --form-text: #f2f2f2;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #fceabb, #f8b500);
-      color: #333;
+      background: var(--primary-bg);
+      color: var(--text-color);
       padding: 20px;
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
     }
 
     h1, h2 {
       text-align: center;
-      color: #2c3e50;
+      color: var(--text-color);
     }
 
     #alertBox {
@@ -26,66 +42,50 @@
       margin-bottom: 15px;
       text-align: center;
       font-weight: bold;
-      transition: opacity 0.5s ease;
     }
 
     #loadingSpinner {
       display: none;
       text-align: center;
       font-style: italic;
-      color: #555;
+      color: #f0f0f0;
       margin-top: 10px;
     }
 
     form {
-      background-color: #fffbe6;
-      padding: 20px;
+      background-color: var(--form-bg);
+      color: var(--form-text);
+      padding: 25px;
       border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
       margin-bottom: 30px;
     }
 
-    label {
+    label, input {
       display: block;
+      width: 100%;
       margin-top: 10px;
-      font-weight: bold;
     }
 
     input[type="text"],
     input[type="email"] {
-      width: 100%;
       padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 15px;
       border-radius: 6px;
       border: 1px solid #ccc;
+      margin-bottom: 15px;
     }
 
     button {
       padding: 10px 20px;
-      margin-top: 10px;
-      margin-right: 10px;
+      margin: 10px 10px 0 0;
       border: none;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s ease;
     }
 
-    button:hover {
-      opacity: 0.9;
-      transform: scale(1.03);
-    }
-
-    button[type="button"] {
-      background-color: #27ae60;
-      color: white;
-    }
-
-    #cancelUpdate {
-      background-color: #c0392b;
-      color: white;
-    }
+    button[type="button"] { background-color: #007bff; color: white; }
+    #cancelUpdate { background-color: #dc3545; color: white; }
 
     ul#dataList {
       list-style: none;
@@ -93,34 +93,38 @@
     }
 
     ul#dataList li {
-      background-color: #ffffff;
+      background-color: var(--card-bg);
+      color: var(--form-text);
       margin-bottom: 12px;
       padding: 15px;
       border-radius: 8px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
     }
 
-    ul#dataList li button {
-      margin-top: 10px;
-      margin-right: 5px;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      border-radius: 5px;
+    .edit-btn { background-color: #17a2b8; color: white; }
+    .delete-btn { background-color: #e74c3c; color: white; }
+
+    #themeToggle {
+      float: right;
+      cursor: pointer;
+      background: #444;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-top: -10px;
     }
 
-    ul#dataList li .edit-btn {
-      background-color: #3498db;
-      color: white;
-    }
-
-    ul#dataList li .delete-btn {
-      background-color: #e74c3c;
-      color: white;
+    #searchInput {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>CLOUDBOOSTA 2025 COHORT1 DEVOPS STUDENTS</h1>
+  <div id="themeToggle" onclick="toggleTheme()">Toggle Dark Mode</div>
+  <h1>CLOUDBOOSTA 2025 COHORT 1 DEVOPS STUDENTS</h1>
   <h2 id="formTitle">Insert Record</h2>
 
   <div id="alertBox"></div>
@@ -141,26 +145,27 @@
     <button type="button" id="cancelUpdate" onclick="resetForm()" style="display:none;">Cancel</button>
   </form>
 
+  <input type="text" id="searchInput" placeholder="Search by name...">
+
   <h2>All Records</h2>
   <ul id="dataList"></ul>
 
   <script>
+    function toggleTheme() {
+      document.body.dataset.theme = document.body.dataset.theme === "dark" ? "" : "dark";
+    }
+
     function showAlert(message, type = "success") {
       const alertBox = document.getElementById('alertBox');
       alertBox.style.display = 'block';
-      alertBox.style.backgroundColor = type === "success" ? "#2ecc71" : "#e74c3c";
+      alertBox.style.backgroundColor = type === "success" ? "#28a745" : "#dc3545";
       alertBox.style.color = "white";
       alertBox.innerText = message;
-      alertBox.style.opacity = 1;
-      setTimeout(() => {
-        alertBox.style.opacity = 0;
-        setTimeout(() => alertBox.style.display = 'none', 300);
-      }, 3000);
+      setTimeout(() => alertBox.style.display = 'none', 3000);
     }
 
     function showLoading(show) {
-      const spinner = document.getElementById('loadingSpinner');
-      spinner.style.display = show ? 'block' : 'none';
+      document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
     }
 
     function submitForm() {
@@ -169,52 +174,48 @@
       const email = document.getElementById('email').value.trim();
       const status = document.getElementById('status').value.trim();
 
-      if (!name) {
-        showAlert('Name is required.', 'error');
-        return;
-      }
+      if (!name) return showAlert('Name is required.', 'error');
 
       const payload = JSON.stringify({ name, email, status });
       const url = id ? `/update_record/${id}` : '/insert_record';
       const method = id ? 'PUT' : 'POST';
 
       showLoading(true);
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: payload
-      })
-      .then(res => res.json())
-      .then(data => {
-        showAlert(data.message || data.error, data.error ? 'error' : 'success');
-        resetForm();
-        loadData();
-      })
-      .catch(() => {
-        showAlert('Network error. Please try again.', 'error');
-      })
-      .finally(() => showLoading(false));
+      fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: payload })
+        .then(res => res.json())
+        .then(data => {
+          showAlert(data.message || data.error, data.error ? 'error' : 'success');
+          resetForm();
+          loadData();
+        })
+        .catch(() => showAlert('Network error. Please try again.', 'error'))
+        .finally(() => showLoading(false));
     }
 
     function loadData() {
       fetch('/data')
         .then(res => res.json())
         .then(data => {
-          const dataList = document.getElementById('dataList');
-          dataList.innerHTML = '';
-          data.forEach(record => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <strong>ID:</strong> ${record.id}<br>
-              <strong>Name:</strong> ${record.name}<br>
-              <strong>Email:</strong> ${record.email || 'N/A'}<br>
-              <strong>Status:</strong> ${record.status || 'N/A'}<br>
-              <button class="edit-btn" onclick="editRecord(${record.id}, '${record.name}', '${record.email || ''}', '${record.status || ''}')">Edit</button>
-              <button class="delete-btn" onclick="deleteRecord(${record.id})">Delete</button>
-            `;
-            dataList.appendChild(li);
-          });
+          window.allData = data;
+          displayData(data);
         });
+    }
+
+    function displayData(data) {
+      const dataList = document.getElementById('dataList');
+      dataList.innerHTML = '';
+      data.forEach(record => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>ID:</strong> ${record.id}<br>
+          <strong>Name:</strong> ${record.name}<br>
+          <strong>Email:</strong> ${record.email || 'N/A'}<br>
+          <strong>Status:</strong> ${record.status || 'N/A'}<br>
+          <button class="edit-btn" onclick="editRecord(${record.id}, '${record.name}', '${record.email || ''}', '${record.status || ''}')">Edit</button>
+          <button class="delete-btn" onclick="deleteRecord(${record.id})">Delete</button>
+        `;
+        dataList.appendChild(li);
+      });
     }
 
     function editRecord(id, name, email, status) {
@@ -228,21 +229,16 @@
     }
 
     function deleteRecord(id) {
-      if (!confirm(`Are you sure you want to delete record ID ${id}?`)) return;
-
+      if (!confirm(`Delete record ID ${id}?`)) return;
       showLoading(true);
-      fetch(`/delete_record/${id}`, {
-        method: 'DELETE'
-      })
-      .then(res => res.json())
-      .then(data => {
-        showAlert(data.message || data.error, data.error ? 'error' : 'success');
-        loadData();
-      })
-      .catch(() => {
-        showAlert('Failed to delete. Try again.', 'error');
-      })
-      .finally(() => showLoading(false));
+      fetch(`/delete_record/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+          showAlert(data.message || data.error, data.error ? 'error' : 'success');
+          loadData();
+        })
+        .catch(() => showAlert('Failed to delete. Try again.', 'error'))
+        .finally(() => showLoading(false));
     }
 
     function resetForm() {
@@ -253,6 +249,12 @@
       document.getElementById('formTitle').innerText = 'Insert Record';
       document.getElementById('cancelUpdate').style.display = 'none';
     }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const keyword = this.value.toLowerCase();
+      const filtered = window.allData.filter(r => r.name.toLowerCase().includes(keyword));
+      displayData(filtered);
+    });
 
     window.onload = loadData;
   </script>
