@@ -97,3 +97,17 @@ def delete_record(record_id):
 # Run app
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+@app.before_first_request
+def initialize():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS example_table (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL
+        )
+    """)
+    connection.commit()
+    connection.close()
+
