@@ -151,6 +151,8 @@
   <ul id="dataList"></ul>
 
   <script>
+    const BASE_URL = 'https://cbaflaskapp.website'; // ✅ Replace with your actual domain
+
     function toggleTheme() {
       document.body.dataset.theme = document.body.dataset.theme === "dark" ? "" : "dark";
     }
@@ -177,7 +179,7 @@
       if (!name) return showAlert('Name is required.', 'error');
 
       const payload = JSON.stringify({ name, email, status });
-      const url = id ? `/update_record/${id}` : '/insert_record';
+      const url = id ? `${BASE_URL}/update_record/${id}` : `${BASE_URL}/insert_record`;
       const method = id ? 'PUT' : 'POST';
 
       showLoading(true);
@@ -193,7 +195,7 @@
     }
 
     function loadData() {
-      fetch('/data')
+      fetch(`${BASE_URL}/data`)
         .then(res => res.json())
         .then(data => {
           window.allData = data;
@@ -231,7 +233,7 @@
     function deleteRecord(id) {
       if (!confirm(`Delete record ID ${id}?`)) return;
       showLoading(true);
-      fetch(`/delete_record/${id}`, { method: 'DELETE' })
+      fetch(`${BASE_URL}/delete_record/${id}`, { method: 'DELETE' })
         .then(res => res.json())
         .then(data => {
           showAlert(data.message || data.error, data.error ? 'error' : 'success');
