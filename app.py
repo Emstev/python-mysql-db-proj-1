@@ -7,26 +7,15 @@ app = Flask(__name__)
 def get_db_connection():
     return pymysql.connect(
         host='mydb.c5su8yseyvqt.eu-central-1.rds.amazonaws.com',  # Your RDS endpoint
-        user='dbuser',                                             # Your DB username
-        password='dbpassword',                                     # Your DB password
-        db='devprojdb',                                            # Your DB name
+        user='dbuser',
+        password='dbpassword',
+        db='devprojdb',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
 
-# Health check
-@app.route('/health')
-def health():
-    return "Up & Running"
-
-# UI Route
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# Create table (optional setup route)
-@app.route('/create_table')
-def create_table():
+# Create table function (called on startup)
+def create_table_if_not_exists():
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("""
@@ -39,7 +28,16 @@ def create_table():
     """)
     connection.commit()
     connection.close()
-    return "Table created successfully"
+
+# Health check
+@app.route('/health')
+def health():
+    return "Up & Running"
+
+# UI Route
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # Insert new record
 @app.route('/insert_record', methods=['POST'])
@@ -94,20 +92,7 @@ def delete_record(record_id):
     connection.close()
     return jsonify({"message": "Record deleted successfully"})
 
-# Run app
+# Run app with table check on start
 if __name__ == '__main__':
+    create_table_if_not_exists()
     app.run(debug=True, host='0.0.0.0', port=5000)
-
-@app.before_first_request
-def initialize():
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS example_table (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL
-        )
-    """)
-    connection.commit()
-    connection.close()
-
