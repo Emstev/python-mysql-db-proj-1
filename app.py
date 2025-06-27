@@ -3,112 +3,58 @@ import pymysql
 
 app = Flask(__name__)
 
-# Database connection function
 def get_db_connection():
-    return pymysql.connect(
-        host='mydb.c5su8yseyvqt.eu-central-1.rds.amazonaws.com',  # Replace with your RDS endpoint
-        user='dbuser',
-        password='dbpassword',
-        db='devprojdb',
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
-    )
+    connection = pymysql.connect(host='mydb.c5su8yseyvqt.eu-central-1.rds.amazonaws.com',  # Replace with your RDS endpoint
+                                 user='dbuser',      # Replace with your RDS username
+                                 password='dbpassword',  # Replace with your RDS password
+                                 db='devprojdb',   # Replace with your database name
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+    return connection
 
-# Create table function (called at startup)
-def create_table_if_not_exists():
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS example_table (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    email VARCHAR(255),
-                    status VARCHAR(100)
-                )
-            """)
-        connection.commit()
-    finally:
-        connection.close()
-
-# Health check route
 @app.route('/health')
 def health():
-    return "Up & Running", 200
+    return "Up & Running"
+
+@app.route('/create_table')
+def create_table():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    create_table_query = """
+        CREATE TABLE IF NOT EXISTS example_table (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL
+        )
+    """
+    cursor.execute(create_table_query)
+    connection.commit()
+    connection.close()
+    return "Table created successfully"
+
+@app.route('/insert_record', methods=['POST'])
+def insert_record():
+    name = request.json['name']
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    insert_query = "INSERT INTO example_table (name) VALUES (%s)"
+    cursor.execute(insert_query, (name,))
+    connection.commit()
+    connection.close()
+    return "Record inserted successfully"
+
+@app.route('/data')
+def data():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM example_table')
+    result = cursor.fetchall()
+    connection.close()
+    return jsonify(result)
 
 # UI route
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Insert a new record
-@app.route('/insert_record', methods=['POST'])
-def insert_record():
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    status = data.get('status')
-
-    if not name:
-        return jsonify({"error": "Name is required"}), 400
-
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO example_table (name, email, status) VALUES (%s, %s, %s)",
-                (name, email, status)
-            )
-        connection.commit()
-        return jsonify({"message": "Record inserted successfully"}), 201
-    finally:
-        connection.close()
-
-# Get all records
-@app.route('/data')
-def get_data():
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM example_table")
-            result = cursor.fetchall()
-        return jsonify(result), 200
-    finally:
-        connection.close()
-
-# Update a record
-@app.route('/update_record/<int:record_id>', methods=['PUT'])
-def update_record(record_id):
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    status = data.get('status')
-
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE example_table SET name=%s, email=%s, status=%s WHERE id=%s",
-                (name, email, status, record_id)
-            )
-        connection.commit()
-        return jsonify({"message": "Record updated successfully"}), 200
-    finally:
-        connection.close()
-
-# Delete a record
-@app.route('/delete_record/<int:record_id>', methods=['DELETE'])
-def delete_record(record_id):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM example_table WHERE id=%s", (record_id,))
-        connection.commit()
-        return jsonify({"message": "Record deleted successfully"}), 200
-    finally:
-        connection.close()
-
-# Run the Flask app and ensure the table exists on startup
 if __name__ == '__main__':
-    create_table_if_not_exists()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0')
